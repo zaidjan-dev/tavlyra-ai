@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090909"><meta name="description" content="Tavlyra AI — your ideas, our intelligence.">
+<title>Tavlyra AI</title>
+<style>
+:root{--bg:#090909;--panel:#141414;--panel2:#1c1c1c;--gold:#d7b66d;--gold2:#f2d99c;--text:#f5f2eb;--muted:#a7a196;--line:#302b20}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#282115 0,transparent 48%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.app{max-width:900px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0 16px}
+.brand{font-size:20px;font-weight:800;letter-spacing:2px;color:var(--gold2)}.tag{font-size:10px;color:var(--muted);letter-spacing:2px}
+.status{font-size:11px;color:#9bd6a8;border:1px solid #284b32;border-radius:30px;padding:6px 10px}
+main{flex:1;display:flex;flex-direction:column;padding:24px 0 16px}
+.hero{text-align:center;margin:24px auto 22px;max-width:600px}.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.1;margin:8px 0 12px}.hero h1 span{color:var(--gold2)}.hero p{color:var(--muted);line-height:1.6;margin:0}
+.suggestions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:650px;width:100%;margin:0 auto 20px}
+.suggestion{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:13px;text-align:left;cursor:pointer}.suggestion:hover{border-color:var(--gold)}
+.chat{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.msg{padding:14px 16px;border-radius:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}.user{background:#2a2418;border:1px solid #594827;align-self:flex-end;max-width:90%}.assistant{background:var(--panel);border:1px solid #292929;align-self:stretch}.error{color:#ffb4a9}
+.composer{position:sticky;bottom:0;width:100%;max-width:760px;margin:16px auto 0;background:#111;border:1px solid #51442a;border-radius:17px;padding:10px;box-shadow:0 10px 40px #0008}
+textarea{width:100%;resize:vertical;min-height:58px;max-height:180px;background:transparent;color:var(--text);border:0;outline:0;padding:8px;font:inherit}
+.controls{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 0}.controls small{color:var(--muted);font-size:11px}
+select,button{font:inherit}select{background:#201d17;color:var(--gold2);border:1px solid var(--line);border-radius:9px;padding:8px}
+button.send{background:linear-gradient(135deg,#f2d99c,#b58b3c);color:#17120a;border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+footer{text-align:center;color:#777;font-size:11px;padding:16px 0 4px}
+@media(max-width:520px){.app{padding:12px}.suggestions{grid-template-columns:1fr}.hero{margin:30px auto 20px}.status{font-size:10px}}
+</style></head>
+<body><div class="app">
+<header><div><div class="brand">TAVLYRA AI</div><div class="tag">YOUR IDEAS. OUR INTELLIGENCE.</div></div><div class="status" id="status">● Demo ready</div></header>
+<main>
+<section class="hero" id="hero"><div class="tag">MEET YOUR AI ASSISTANT</div><h1>What can we <span>create</span> today?</h1><p>Ask questions, explore ideas, write, learn and build — in English, Urdu or Roman Urdu.</p></section>
+<div class="suggestions" id="suggestions">
+<button class="suggestion">Explain artificial intelligence in simple Urdu</button>
+<button class="suggestion">Give me 5 business ideas with zero investment</button>
+<button class="suggestion">Write a professional email in English</button>
+<button class="suggestion">Help me learn coding step by step</button>
+</div>
+<div class="chat" id="chat" aria-live="polite"></div>
+<div class="composer"><textarea id="prompt" placeholder="Message Tavlyra AI... (Enter to send, Shift+Enter for new line)"></textarea>
+<div class="controls"><small id="mode">Demo replies until API is connected</small><div style="display:flex;gap:8px;align-items:center"><select id="language" aria-label="Response language"><option value="auto">Auto language</option><option value="English">English</option><option value="Urdu">Urdu</option><option value="Roman Urdu">Roman Urdu</option></select><button class="send" id="send">Send ↑</button></div></div></div>
+</main><footer>Early prototype · Do not enter sensitive or confidential information.</footer></div>
+<script>
+const chat=document.querySelector('#chat'),promptBox=document.querySelector('#prompt'),send=document.querySelector('#send'),statusEl=document.querySelector('#status'),mode=document.querySelector('#mode');
+let history=[];
+function add(role,text,extra=''){const d=document.createElement('div');d.className='msg '+role+' '+extra;d.textContent=text;chat.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
+function demoReply(q){return "Thanks for trying Tavlyra AI! This is the interactive demo mode.\\n\\nYour message: “"+q+"”\\n\\nTo enable real AI answers, connect a Gemini API key to the Cloudflare Pages Function using the setup guide in the ZIP. Your key must stay on the server — never paste it into this webpage.\\n\\nTavlyra supports English, Urdu and Roman Urdu interface prompts."}
+async function ask(){const q=promptBox.value.trim();if(!q||send.disabled)return;promptBox.value='';document.querySelector('#hero').style.display='none';document.querySelector('#suggestions').style.display='none';add('msg user',q);send.disabled=true;send.textContent='Thinking…';const loading=add('assistant','Tavlyra is thinking…');
+try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-12),language:document.querySelector('#language').value})});if(r.status===404){loading.textContent=demoReply(q);history.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text:loading.textContent}]});statusEl.textContent='● Demo mode';mode.textContent='Connect API to enable live AI';}
+else{const data=await r.json();if(!r.ok)throw new Error(data.error||'Request failed');loading.textContent=data.reply;history.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text:data.reply}]});statusEl.textContent='● AI connected';mode.textContent='Gemini API connected';}}
+catch(e){loading.textContent='Could not get a response: '+e.message+'\\nCheck the setup guide and API secret.';loading.classList.add('error');}
+finally{send.disabled=false;send.textContent='Send ↑';promptBox.focus()}}
+send.addEventListener('click',ask);promptBox.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}});
+document.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>{promptBox.value=b.textContent;ask()}));
+</script></body></html>
